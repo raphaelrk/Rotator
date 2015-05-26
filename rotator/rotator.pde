@@ -90,9 +90,9 @@ void draw() {
     float lrCombinedOne = (in.left.get(i)   + in.right.get(i)  )/2.0;
     float lrCombinedTwo = (in.left.get(i+1) + in.right.get(i+1))/2.0;
     stroke(255, 10, 10);
-    line(i, upperRecordLineY + lrCombinedOne*50, i+1, upperRecordLineY + lrCombinedTwo*50); // upper line
+    line((float)i/(in.bufferSize()-1)*width, upperRecordLineY + lrCombinedOne*50, (float)(i+1)/(in.bufferSize()-1)*width, upperRecordLineY + lrCombinedTwo*50); // upper line
     stroke(255);
-    line(i, lowerRecordLineY + lrCombinedOne*50, i+1, lowerRecordLineY + lrCombinedTwo*50); // lower line
+    line((float)i/(in.bufferSize()-1)*width, lowerRecordLineY + lrCombinedOne*50, (float)(i+1)/(in.bufferSize()-1)*width, lowerRecordLineY + lrCombinedTwo*50); // lower line
   }
 
   // directions/status
