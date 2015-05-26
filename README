@@ -1,5 +1,5 @@
 Rotator tests how well you can say things backwards
-Record yourself saying something forwards, record yourself saying the same thing backwards, and then listen as Rotator plays them back to you at the same time.
+Rotator records you saying something forwards and backwards then scores how close they were and lets you hear them played over each other
 
 It's written in Processing, uses minim and array-flipping for its audio and audio manipulation, and finds the offset of the backwards audio by searching for the offset that results in the lowest variance from the forwards audio.
 

@@ -6,7 +6,8 @@ class Button {
   
   public static final int BTN_REGULAR = 0;
   public static final int BTN_PLAY = 1;
-  public static final int BTN_RECORD = 2;
+  public static final int BTN_PLAY_BACKWARDS = 2;
+  public static final int BTN_RECORD = 3;
   int type = BTN_REGULAR;
   
   public Button(int x, int y, int w, int h, color c, String t) {
@@ -32,6 +33,11 @@ class Button {
     
     x2 = x + w;
     y2 = y + h;
+    
+    if(this.type == BTN_PLAY_BACKWARDS) {
+      this.w = -w;
+      this.type = BTN_PLAY;
+    }
     
     if(this.type == BTN_PLAY) {
       this.t = "";

@@ -1,13 +1,15 @@
 /**
- * This sketch demonstrates how to an <code>AudioRecorder</code> to record audio to disk. 
- * To use this sketch you need to have something plugged into the line-in on your computer, 
- * or else be working on a laptop with an active built-in microphone. 
- * <p>
- * Press 'r' to toggle recording on and off and the press 's' to save to disk. 
- * The recorded file will be placed in the sketch folder of the sketch.
- * <p>
- * For more information about Minim and additional features, 
- * visit http://code.compartmental.net/minim/
+ * Rotator
+ * By Raphael Rouvinov-Kats
+ *
+ * Rotator records you saying something forwards and backwards
+ * Then scores how close they were and
+ * lets you hear them played over each other
+ *
+ * Written at CodeDay Chicago 2015 May
+ * Where it won Best Application
+ * Android version by Ben Thayer and Andrew Irvine
+ * iOS version by Dhaval Joshi and Yu-Lin Yang
  */
 
 import ddf.minim.*;
@@ -25,8 +27,12 @@ boolean firstRecorded = false;
 boolean secondRecorded = false;
 float[] regular, backwards;
 
-Button recordBtnOne, playBtnOne, recordBtnTwo, playBtnTwo;
+Button playBtnOne, playBtnTwo;
+Button playBackwardsBtnOne, playBackwardsBtnTwo;
+Button recordBtnOne, recordBtnTwo;
 Button backwardsBtn;
+
+int msTilBackBtnOneStops, msTilBackBtnTwoStops, msTilBackBtnStops;
 
 AudioSample recordingOne, recordingTwo;
 
@@ -47,10 +53,12 @@ void setup() {
   // the file will be located in the sketch's root folder.
   recorder = minim.createRecorder(in, "firstrecording.wav");
 
-  recordBtnOne = new Button(width-40, upperRecordLineY - 40, 15, 15, color(200, 50, 50), "RECORD", Button.BTN_RECORD);
   playBtnOne = new Button(width-20, upperRecordLineY - 40, 15, 15, color(100, 150, 100), "PLAY", Button.BTN_PLAY);
-  recordBtnTwo = new Button(width-40, lowerRecordLineY - 40, 15, 15, color(200, 50, 50), "RECORD", Button.BTN_RECORD);
   playBtnTwo = new Button(width-20, lowerRecordLineY - 40, 15, 15, color(100, 150, 100), "PLAY", Button.BTN_PLAY);
+  playBackwardsBtnOne = new Button(width-60, upperRecordLineY - 40, 15, 15, color(100, 150, 100), "PLAY", Button.BTN_PLAY_BACKWARDS);
+  playBackwardsBtnTwo = new Button(width-60, lowerRecordLineY - 40, 15, 15, color(100, 150, 100), "PLAY", Button.BTN_PLAY_BACKWARDS);
+  recordBtnOne = new Button(width-40, upperRecordLineY - 40, 15, 15, color(200, 50, 50), "RECORD", Button.BTN_RECORD);
+  recordBtnTwo = new Button(width-40, lowerRecordLineY - 40, 15, 15, color(200, 50, 50), "RECORD", Button.BTN_RECORD);
   backwardsBtn = new Button(width/2-75, 360, 150, 40, color(100, 100, 240), "PLAY BACK");
 
   textFont(createFont("Tahoma", 64));
@@ -111,17 +119,42 @@ void draw() {
   // draw record and play buttons
   recordBtnOne.draw();
   playBtnOne.draw();
+  playBackwardsBtnOne.draw();
   recordBtnTwo.draw();
   playBtnTwo.draw();
+  playBackwardsBtnTwo.draw();
+  
   if (firstRecorded && secondRecorded) backwardsBtn.draw();
-
+  
+  // backwards button and backwards play button color changing
+  if(msTilBackBtnOneStops > 0)
+    playBackwardsBtnOne.setColor(color(150, 255, 150));
+  else
+    if(firstRecorded)
+      playBackwardsBtnOne.setColor(color(50, 200, 50));
+    else
+      playBackwardsBtnOne.setColor(color(100, 150, 100));
+  
+  if(msTilBackBtnTwoStops > 0)
+    playBackwardsBtnTwo.setColor(color(150, 255, 150));
+  else
+    if(secondRecorded)
+      playBackwardsBtnTwo.setColor(color(50, 200, 50));
+    else
+      playBackwardsBtnTwo.setColor(color(100, 150, 100));
+  
+  if(msTilBackBtnStops > 0)
+    backwardsBtn.setColor(color(150, 150, 255));
+  else
+    backwardsBtn.setColor(color(100, 100, 240));
+  
   // keep play buttons greyed out or normal green when not playing
   if (player == null || !player.isPlaying()) {
-    if (firstRecorded)
+    if (firstRecorded) 
       playBtnOne.setColor(color(50, 200, 50));
     else
       playBtnOne.setColor(color(100, 150, 100));
-
+    
     if (secondRecorded)
       playBtnTwo.setColor(color(50, 200, 50));
     else
@@ -155,8 +188,23 @@ void draw() {
       //line((float)(i)/len*width, 500+10*back1, (float)(i+8)/len*width, 500+10*back2);
     }
   }
+  
+  // draw score
+  if(firstRecorded && secondRecorded) {
+    textAlign(CENTER);
+    textSize(24);
+    text("Score: " + getScore(), width/2, 600);
+    
+    textSize(14);
+    text("(lower is better)", width/2, 625);
+  }
+  
+  if(msTilBackBtnOneStops > 0) msTilBackBtnOneStops -= 1.0/frameRate*1000;
+  if(msTilBackBtnTwoStops > 0) msTilBackBtnTwoStops -= 1.0/frameRate*1000;
+  if(msTilBackBtnStops > 0) msTilBackBtnStops -= 1.0/frameRate*1000;
 }
 
+// plays the overlapping sound
 void playRevert() {
   float[] forwardLeft = recordingOne.getChannel(AudioSample.LEFT);
   float[] forwardRight = recordingOne.getChannel(AudioSample.RIGHT);
@@ -191,24 +239,6 @@ void playRevert() {
     }
   }
   
-  
-  /*
-  int start = max(0, bestOffset);
-  int end = min(backwards.length + bestOffset, regular.length);
-  
-  float[] recordingTwoLeftOffset = new float[end];
-  float[] recordingTwoRightOffset = new float[end];
-  
-  for(int i = 0; i < end; i++) {
-    if(i < start) {
-      recordingTwoLeftOffset[i] = 0;
-      recordingTwoRightOffset[i] = 0;
-    } else {
-      recordingTwoLeftOffset[i] = recordingTwoLeft[i-start];
-      recordingTwoRightOffset[i] = recordingTwoRight[i-start];
-    }
-  }*/
-  
   AudioSample backwards = minim.createSample(backwardRecLeft, 
                                              backwardRecRight, 
                                              recordingTwo.getFormat());
@@ -219,6 +249,7 @@ void playRevert() {
 
   backwards.trigger();
   forwards.trigger();
+  msTilBackBtnStops = backwards.length();
 }
 
 // used to sum left and right audio channels into one array
@@ -243,13 +274,19 @@ float[] reverseArr(float[] arr) {
   return newArr;
 }
 
+// returns score of recording similarity based on variance
+float getScore() {
+  return smallestVariance/(regular.length + backwards.length)*10000;
+}
+
 // prints offset and a score derived from variance
 void printOffsetAndVariance() {
   println("offset: " + bestOffset);
-  println("score: " + (smallestVariance/(regular.length + backwards.length)*10000) + "\n");
+  println("score: " + getScore() + "\n");
 }
 
 // calculates best offset of backwards recording to match regular one
+// looks for lowest variance to determine new offset
 void calculateNewOffset() {
   int newOffset = 0;
   float newVariance = Float.MAX_VALUE;
@@ -337,7 +374,7 @@ void mouseReleased() {
       } else {
         if (i == 0) player = minim.loadFile("firstrecording.wav");
         if (i == 1) player = minim.loadFile("secondrecording.wav");
-
+        
         //player.seek
         player.play();
         playBtn.setColor(color(150, 255, 150));
@@ -345,7 +382,31 @@ void mouseReleased() {
     }
   }
   
-  // backwards playback button pressed
+  // backwards play button
+  Button[] playBackwardsBtns = { playBackwardsBtnOne, playBackwardsBtnTwo };
+  for (int i = 0; i < playBackwardsBtns.length; i++) {
+    Button playBtn = playBackwardsBtns[i];
+    if (playBtn.isHoveredOver() && recorded[i] == true) {
+      float[] left = recordingOne.getChannel(AudioSample.LEFT);
+      float[] right = recordingOne.getChannel(AudioSample.RIGHT);
+      
+      if(i == 1) {
+        left = recordingTwo.getChannel(AudioSample.LEFT);
+        right = recordingTwo.getChannel(AudioSample.RIGHT);
+      }
+      
+      
+      AudioSample backwards = minim.createSample(reverseArr(left),
+                                                 reverseArr(right),
+                                                 recordingOne.getFormat());
+      backwards.trigger();
+      
+      if(i == 0) msTilBackBtnOneStops = backwards.length();
+      if(i == 1) msTilBackBtnTwoStops = backwards.length();
+    }
+  }
+  
+  // overlap playback button pressed
   if (backwardsBtn.isHoveredOver()) {
     playRevert();
   }
