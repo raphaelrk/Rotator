@@ -4,4 +4,4 @@ Record yourself saying something forwards, record yourself saying the same thing
 It's written in Processing, uses minim and array-flipping for its audio and audio manipulation, and finds the offset of the backwards audio by searching for the offset that results in the lowest variance from the forwards audio.
 
 Rotator was written at CodeDay Chicago 2015, where it won Best Application
-Desktop version by Raphael, Android version by Ben Thayer and Andrew Irvine, and iOS version by Yu-Lin Yang and Dhaval Joshi
+Desktop version by Raphael Rouvinov-Kats, Android version by Ben Thayer and Andrew Irvine, and iOS version by Yu-Lin Yang and Dhaval Joshi
